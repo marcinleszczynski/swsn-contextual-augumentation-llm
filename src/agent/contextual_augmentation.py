@@ -1,3 +1,10 @@
+"""
+Contextual Augmentation Agent.
+
+This module defines the ContextualAugmentation class, which uses
+a Gemini model to extract, expand, and describe entities from text.
+"""
+
 import os
 from typing import List, Optional
 from pydantic_ai import Agent
@@ -13,11 +20,29 @@ from src.models.schemas import (
 
 
 class ContextualAugmentation:
+    """
+    Agent for augmenting text with contextual information about entities.
+
+    Uses a Gemini model to perform Named Entity Recognition (NER),
+    Entity Linking (Expansion), and Entity Description.
+    """
+
     def __init__(
         self,
         model_name: str = 'gemini-1.5-flash',
         api_key: Optional[str] = None
     ):
+        """
+        Initialize the ContextualAugmentation agent.
+
+        Args:
+            model_name: The name of the Gemini model to use.
+            api_key: The Google API key. If None, reads from env
+                GEMINI_API_KEY.
+
+        Raises:
+            ValueError: If GEMINI_API_KEY is not set.
+        """
         api_key = api_key or os.getenv("GEMINI_API_KEY")
         if not api_key:
             raise ValueError(
@@ -27,6 +52,15 @@ class ContextualAugmentation:
         self.model = GeminiModel(model_name)
 
     def extract_entities(self, text: str) -> List[str]:
+        """
+        Extract named entities from the given text.
+
+        Args:
+            text: The input text.
+
+        Returns:
+            A list of extracted entity names.
+        """
         agent = Agent(
             self.model,
             output_type=NamedEntityList,
@@ -42,6 +76,17 @@ class ContextualAugmentation:
     def expand_entities(
         self, text: str, entities: List[str]
     ) -> List[ExpandedEntity]:
+        """
+        Expand entities to their full names based on context.
+
+        Args:
+            text: The original text context.
+            entities: List of entity names to expand.
+
+        Returns:
+            A list of ExpandedEntity objects containing original and
+            expanded names.
+        """
         agent = Agent(
             self.model,
             output_type=ExpandedEntityList,
@@ -62,6 +107,15 @@ class ContextualAugmentation:
     def describe_entities(
         self, expanded_entities: List[ExpandedEntity]
     ) -> List[EntityWithDescription]:
+        """
+        Generate descriptions for a list of entities.
+
+        Args:
+            expanded_entities: List of ExpandedEntity objects.
+
+        Returns:
+            A list of EntityWithDescription objects.
+        """
         agent = Agent(
             self.model,
             output_type=EntityWithDescriptionList,

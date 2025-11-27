@@ -1,3 +1,10 @@
+"""
+Main entry point for the Contextual Augmentation Agent.
+
+This script demonstrates the usage of the ContextualAugmentation agent
+to extract, expand, and describe entities from a sample text.
+"""
+
 import os
 import sys
 from dotenv import load_dotenv
@@ -9,6 +16,14 @@ from src.agent.contextual_augmentation import ContextualAugmentation  # noqa: E4
 
 
 def main():
+    """
+    Run the main execution flow of the agent.
+
+    1. Initialize the agent with API key and model name.
+    2. Extract entities from sample text.
+    3. Expand the extracted entities.
+    4. Generate descriptions for the expanded entities.
+    """
     load_dotenv()
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
