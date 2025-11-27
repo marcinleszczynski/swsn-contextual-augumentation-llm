@@ -1,4 +1,4 @@
-# Contextual Augmentation with Pydantic AI
+# Contextual Augmentation for Entity Linking without external dataset
 
 This project implements a contextual augmentation pipeline for entity linking using Large Language Models (LLMs) via `pydantic-ai`.
 
@@ -32,12 +32,8 @@ This project implements a contextual augmentation pipeline for entity linking us
 
 ## Configuration
 
-1.  Copy `.env.example` to `.env`:
-    ```bash
-    cp .env.example .env
-    ```
-2.  Edit `.env` and set your `GEMINI_API_KEY`.
-3.  (Optional) Set `GEMINI_MODEL` in `.env` to use a specific model (default: `gemini-1.5-flash`).
+1.  Create `.env` and set your `GEMINI_API_KEY`.
+2.  (Optional) Set `GEMINI_MODEL` in `.env` to use a specific model (default: `gemini-2.5-flash`).
 
 ## Usage
 
