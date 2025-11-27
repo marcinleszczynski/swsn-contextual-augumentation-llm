@@ -1,5 +1,8 @@
 # Contextual Augmentation for Entity Linking without external dataset
 
+[![Lint](https://github.com/marcinleszczynski/swsn-contextual-augumentation-llm/actions/workflows/lint.yml/badge.svg)](https://github.com/marcinleszczynski/swsn-contextual-augumentation-llm/actions/workflows/lint.yml)
+![Python](https://img.shields.io/badge/python-3.10+-blue.svg)
+
 This project implements a contextual augmentation pipeline for entity linking using Large Language Models (LLMs) via `pydantic-ai`.
 
 ## Features
