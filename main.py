@@ -5,7 +5,8 @@ from dotenv import load_dotenv
 # Add src to path
 sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
 
-from src.agent.contextual_augmentation import ContextualAugmentation
+from src.agent.contextual_augmentation import ContextualAugmentation  # noqa: E402, E501
+
 
 def main():
     load_dotenv()
@@ -18,7 +19,9 @@ def main():
     # You can pass a specific model name if needed, e.g., 'gemini-2.5-flash'
     model_name = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
     try:
-        augmentor = ContextualAugmentation(model_name=model_name, api_key=api_key)
+        augmentor = ContextualAugmentation(
+            model_name=model_name, api_key=api_key
+        )
         print(f"Initialized with model: {model_name}")
     except Exception as e:
         print(f"Error initializing agent: {e}")
@@ -32,7 +35,7 @@ def main():
     try:
         entities = augmentor.extract_entities(text)
         print(f"Extracted Entities: {entities}\n")
-    except Exception as e:
+    except Exception:
         import traceback
         traceback.print_exc()
         return
@@ -42,7 +45,9 @@ def main():
     try:
         expanded_entities = augmentor.expand_entities(text, entities)
         for entity in expanded_entities:
-            print(f"Original: {entity.original} -> Expanded: {entity.expanded}")
+            print(
+                f"Original: {entity.original} -> Expanded: {entity.expanded}"
+            )
         print()
     except Exception as e:
         print(f"Error in expansion: {e}")
@@ -58,6 +63,7 @@ def main():
     except Exception as e:
         print(f"Error in description: {e}")
         return
+
 
 if __name__ == "__main__":
     main()
