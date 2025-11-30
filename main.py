@@ -9,17 +9,13 @@ and generate NER and Entity Resolution datasets.
 """
 
 import os
-import sys
 from dotenv import load_dotenv
 import pandas as pd
 from datasets import load_dataset
 from itertools import islice
 
-# Add src to path
-sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
-
-from src.agent.contextual_augmentation import ContextualAugmentation  # noqa: E402
-from src.pipeline.pipeline import DatasetPipeline  # noqa: E402
+from src.agent.contextual_augmentation import ContextualAugmentation
+from src.pipeline.pipeline import DatasetPipeline
 
 
 def load_wikipedia_dataset(num_samples: int = 1000) -> pd.DataFrame:
@@ -38,9 +34,12 @@ def load_aida_dataset(num_samples: int = 1000) -> pd.DataFrame:
     """Load AIDA dataset."""
     print(f"Loading AIDA dataset ({num_samples} samples)...")
     ds_stream = load_dataset(
-        "json", data_files="dataset/aida_dev.json", split="train", streaming=True
+        "json",
+        data_files="dataset/aida_dev.json",
+        split="train",
+        streaming=True
     )
-    
+
     seen = set()
     unique_texts = []
     for example in ds_stream:
@@ -50,7 +49,7 @@ def load_aida_dataset(num_samples: int = 1000) -> pd.DataFrame:
             unique_texts.append(example)
         if len(unique_texts) >= num_samples:
             break
-    
+
     df = pd.DataFrame(unique_texts)
     df = df[["text"]].copy()
     df["text"] = df["text"].fillna("")
@@ -64,7 +63,7 @@ def demo_single_example():
     print("="*80)
     print("DEMO: Single Example Processing")
     print("="*80)
-    
+
     load_dotenv()
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
@@ -134,7 +133,7 @@ def run_pipeline(
     print("\n" + "="*80)
     print("RUNNING FULL PIPELINE")
     print("="*80 + "\n")
-    
+
     load_dotenv()
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
@@ -184,9 +183,11 @@ def run_pipeline(
 
 
 def main():
-    """Main entry point."""
+    """
+    Main entry point.
+    """
     import argparse
-    
+
     parser = argparse.ArgumentParser(
         description="Process datasets to create NER and ER datasets"
     )
@@ -214,9 +215,9 @@ def main():
         default='datasets',
         help='Output directory for datasets (default: datasets)'
     )
-    
+
     args = parser.parse_args()
-    
+
     if args.mode == 'demo':
         demo_single_example()
     else:
