@@ -160,25 +160,21 @@ Span-based format with character offsets:
       {
         "start": 0,
         "end": 8,
-        "label": "PER",
         "text": "Angelina"
       },
       {
         "start": 25,
         "end": 29,
-        "label": "PER",
         "text": "Brad"
       },
       {
         "start": 45,
         "end": 48,
-        "label": "PER",
         "text": "Jon"
       },
       {
         "start": 52,
         "end": 54,
-        "label": "LOC",
         "text": "AK"
       }
     ]
