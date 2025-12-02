@@ -21,6 +21,10 @@ from src.pipeline.pipeline import DatasetPipeline
 def load_wikipedia_dataset(num_samples: int = 1000) -> pd.DataFrame:
     """Load Wikipedia dataset."""
     print(f"Loading Wikipedia dataset ({num_samples} samples)...")
+
+    if num_samples == 0:
+        return pd.DataFrame([])
+
     ds_stream = load_dataset(
         "wikimedia/wikipedia", "20231101.en", split="train", streaming=True
     )
@@ -33,6 +37,10 @@ def load_wikipedia_dataset(num_samples: int = 1000) -> pd.DataFrame:
 def load_aida_dataset(num_samples: int = 1000) -> pd.DataFrame:
     """Load AIDA dataset."""
     print(f"Loading AIDA dataset ({num_samples} samples)...")
+
+    if num_samples == 0:
+        return pd.DataFrame([])
+
     ds_stream = load_dataset(
         "json",
         data_files="dataset/aida_dev.json",
