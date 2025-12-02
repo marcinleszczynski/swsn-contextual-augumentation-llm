@@ -124,6 +124,17 @@ def demo_single_example():
         print(f"Error in description: {e}")
         return
 
+    # Step 4: Link Entitites to DBpedia
+    print("--- Step 4: Linking Entitites to DBpedia ---")
+    try:
+        pipeline = DatasetPipeline(augmentor)
+        for item in descriptions:
+            print(f"Name: {item.name}")
+            print(f"Link: {pipeline._find_dbpedia_link(item.name)}\n")
+    except Exception as e:
+        print(f"Error in description: {e}")
+        return
+
 
 def run_pipeline(
     wikipedia_samples: int = 100,

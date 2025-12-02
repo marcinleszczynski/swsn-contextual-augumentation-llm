@@ -3,11 +3,12 @@ Pipeline for creating NER and Entity Resolution datasets.
 
 This module processes text data through the ContextualAugmentation agent
 and builds structured datasets for Named Entity Recognition
-and Entity Resolution.
+and Entity Resolution with Entity Linking.
 """
 
 import json
 import os
+import requests
 from typing import List, Dict, Any, Optional
 from dataclasses import dataclass
 import pandas as pd
@@ -25,6 +26,7 @@ class EntityMention:
     entity_id: str
     canonical_name: str
     description: str
+    dbpedia_link: Optional[str]
 
 
 @dataclass
@@ -63,6 +65,9 @@ class DatasetPipeline:
 
         # Store entity descriptions
         self.entity_descriptions: Dict[str, str] = {}
+
+        # Store entity DBpedia links (cache)
+        self.entity_dbpedia_links: Dict[str, Optional[str]] = {}
 
         # Accumulated datasets
         self.ner_dataset: List[Dict[str, Any]] = []
@@ -116,6 +121,58 @@ class DatasetPipeline:
             return (start, start + len(entity))
 
         return None
+
+    def _find_dbpedia_link(self, canonical_name: str) -> Optional[str]:
+        """
+        Find DBpedia link for an entity using DBpedia Spotlight API.
+
+        Args:
+            canonical_name: The canonical name of the entity
+
+        Returns:
+            DBpedia URL or None if not found
+        """
+        # Check cache first
+        if canonical_name in self.entity_dbpedia_links:
+            return self.entity_dbpedia_links[canonical_name]
+
+        try:
+            url = "https://api.dbpedia-spotlight.org/en/annotate"
+            headers = {"Accept": "application/json"}
+            params = {
+                "text": canonical_name,
+                "confidence": 0.4
+            }
+
+            response = requests.get(url,
+                                    headers=headers,
+                                    params=params,
+                                    timeout=10)
+
+            if response.status_code == 200:
+                data = response.json()
+                resources = data.get("Resources", [])
+
+                if resources:
+                    # Find resource with highest similarity score
+                    best_resource = max(
+                        resources,
+                        key=lambda r: float(r.get("@similarityScore", 0))
+                    )
+                    dbpedia_uri = best_resource.get("@URI")
+
+                    if dbpedia_uri:
+                        self.entity_dbpedia_links[canonical_name] = dbpedia_uri
+                        return dbpedia_uri
+
+            # No DBpedia link found
+            self.entity_dbpedia_links[canonical_name] = None
+            return None
+
+        except Exception as e:
+            print(f"Warning: Could not search for DBpedia link for '{canonical_name}': {e}")
+            self.entity_dbpedia_links[canonical_name] = None
+            return None
 
     def process_document(
         self, doc_id: str, text: str
@@ -172,9 +229,11 @@ class DatasetPipeline:
                 start, end = position
 
                 # Get or create entity ID
-                entity_id = self._get_or_create_entity_id(
-                    canonical, description
-                )
+                entity_id = self._get_or_create_entity_id(canonical,
+                                                          description)
+
+                # Find DBpedia link (cached per canonical name)
+                dbpedia_link = self._find_dbpedia_link(canonical)
 
                 # Add to NER dataset format
                 ner_entities.append({
@@ -190,7 +249,8 @@ class DatasetPipeline:
                     "end": end,
                     "entity_id": entity_id,
                     "canonical_name": canonical,
-                    "description": description
+                    "description": description,
+                    "dbpedia_link": dbpedia_link
                 })
 
             return ProcessedDocument(
@@ -259,7 +319,8 @@ class DatasetPipeline:
                 {
                     "entity_id": entity_id,
                     "canonical_name": canonical_name,
-                    "description": self.entity_descriptions.get(entity_id, "")
+                    "description": self.entity_descriptions.get(entity_id, ""),
+                    "dbpedia_link": self.entity_dbpedia_links.get(canonical_name, None)
                 }
                 for canonical_name, entity_id in self.entity_kb.items()
             ]
