@@ -76,7 +76,7 @@ The output consists of two datasets:
 │   │   └── pipeline.py                  # Main dataset generation pipeline
 │   └── __init__.py
 ├── main.py                              # Entry point
-├── requirements.txt
+└── requirements.txt
 ```
 
 ## Usage
@@ -115,10 +115,24 @@ Name: Brad Pitt
 Description: Brad Pitt is an American actor and film producer.
 
 Name: Jon Voight
-Description: Jon Voight is an American actor.
+Description: Jon Voight is an American actor and the father of Angelina Jolie.
 
 Name: Alaska
 Description: Alaska is a U.S. state located in the northwest extremity of North America.
+
+--- Step 4: Linking Entitites to DBpedia ---
+Name: Angelina Jolie
+Link: http://dbpedia.org/resource/Angelina_Jolie
+
+Name: Brad Pitt
+Link: http://dbpedia.org/resource/Brad_Pitt
+
+Name: Jon Voight
+Link: http://dbpedia.org/resource/Jon_Voight
+
+Name: Alaska
+Link: http://dbpedia.org/resource/Alaska
+
 
 ```
 
@@ -198,7 +212,8 @@ Entity mentions with canonical forms and descriptions:
         "end": 8,
         "entity_id": "E0001",
         "canonical_name": "Angelina Jolie",
-        "description": "American actress, filmmaker, and humanitarian known for her roles in various films and her advocacy work."
+        "description": "American actress, filmmaker, and humanitarian known for her roles in various films and her advocacy work.",
+        "dbpedia_link": "http://dbpedia.org/resource/Angelina_Jolie"
       },
       {
         "mention": "Brad",
@@ -206,7 +221,8 @@ Entity mentions with canonical forms and descriptions:
         "end": 29,
         "entity_id": "E0002",
         "canonical_name": "Brad Pitt",
-        "description": "Highly acclaimed American actor and film producer, recognized for his diverse roles and numerous awards."
+        "description": "Highly acclaimed American actor and film producer, recognized for his diverse roles and numerous awards.",
+        "dbpedia_link": "http://dbpedia.org/resource/Brad_Pitt"
       },
       {
         "mention": "Jon",
@@ -214,7 +230,8 @@ Entity mentions with canonical forms and descriptions:
         "end": 48,
         "entity_id": "E0003",
         "canonical_name": "Jon Voight",
-        "description": "American actor best known for his Emmy Award-winning role as Don Draper in the television series Mad Men."
+        "description": "American actor best known for his Emmy Award-winning role as Don Draper in the television series Mad Men.",
+        "dbpedia_link": "http://dbpedia.org/resource/Jon_Voight"
       },
       {
         "mention": "AK",
@@ -222,7 +239,8 @@ Entity mentions with canonical forms and descriptions:
         "end": 54,
         "entity_id": "E0004",
         "canonical_name": "Alaska",
-        "description": "The largest U.S. state by area, located in the northwest extremity of North America."
+        "description": "The largest U.S. state by area, located in the northwest extremity of North America.",
+        "dbpedia_link": "http://dbpedia.org/resource/Alaska"
       }
     ]
   }
@@ -239,12 +257,14 @@ Reference file mapping entity IDs to canonical names:
     {
       "entity_id": "E0001",
       "canonical_name": "Angelina Jolie",
-      "description": "American actress, filmmaker, and humanitarian..."
+      "description": "American actress, filmmaker, and humanitarian...",
+        "dbpedia_link": "http://dbpedia.org/resource/Angelina_Jolie"
     },
     {
       "entity_id": "E0002",
       "canonical_name": "Brad Pitt",
-      "description": "Highly acclaimed American actor and film producer..."
+      "description": "Highly acclaimed American actor and film producer...",
+        "dbpedia_link": "http://dbpedia.org/resource/Brad_Pitt"
     }
   ]
 }

@@ -2,3 +2,4 @@ pydantic-ai
 python-dotenv
 pandas
 datasets
+requests
