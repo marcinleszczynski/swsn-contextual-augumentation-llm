@@ -200,6 +200,58 @@ def run_pipeline(
     print(f"Total Entity Mentions: {stats['total_entities']}")
     print(f"Unique Entities in KB: {stats['unique_entities']}")
 
+def process_file(
+        file: str,
+        output_dir: str = "datasets"
+):
+    """
+    Run the full pipeline on text extracted from 1 file.
+
+    Args:
+        file: Location of the file with input text
+        output_dir: Directory to save output datasets
+    """
+    load_dotenv()
+    api_key = os.getenv("GEMINI_API_KEY")
+    if not api_key:
+        print("Please set GEMINI_API_KEY environment variable.")
+        return
+    
+    # Initialize agent
+    model_name = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+    try:
+        augmentor = ContextualAugmentation(
+            model_name=model_name, api_key=api_key
+        )
+        print(f"Initialized with model: {model_name}\n")
+    except Exception as e:
+        print(f"Error initializing agent: {e}")
+        return
+
+    # Initialize pipeline
+    pipeline = DatasetPipeline(augmentor, output_dir=output_dir)
+
+    # Load the file
+    with open(file, "r", encoding="utf-8") as f:
+        text = f.read()
+
+    file_df = pd.DataFrame([{"text": text}])
+
+    # Process file
+    pipeline.process_dataframe(file_df, dataset_name='file')
+
+    # Save datasets
+    pipeline.save_datasets()
+
+    # Print statistics
+    print("\n" + "="*80)
+    print("FILE STATISTICS")
+    print("="*80)
+    stats = pipeline.get_statistics()
+    print(f"NER Documents: {stats['ner_documents']}")
+    print(f"ER Documents: {stats['er_documents']}")
+    print(f"Total Entity Mentions: {stats['total_entities']}")
+    print(f"Unique Entities in KB: {stats['unique_entities']}")
 
 def main():
     """
@@ -212,9 +264,15 @@ def main():
     )
     parser.add_argument(
         '--mode',
-        choices=['demo', 'pipeline'],
+        choices=['demo', 'pipeline', 'file'],
         default='demo',
-        help='Run mode: demo (single example) or pipeline (full processing)'
+        help='Run mode: demo (single example), pipeline (full processing) or file (1 txt file)'
+    )
+    parser.add_argument(
+        '--filename',
+        nargs='?',
+        default=None,
+        help='Input file for --mode file'
     )
     parser.add_argument(
         '--wikipedia-samples',
@@ -239,6 +297,10 @@ def main():
 
     if args.mode == 'demo':
         demo_single_example()
+    elif args.mode == 'file':
+        if not args.filename:
+            parser.error("You must provide a filename when using --mode file")
+        process_file(args.filename)
     else:
         run_pipeline(
             wikipedia_samples=args.wikipedia_samples,

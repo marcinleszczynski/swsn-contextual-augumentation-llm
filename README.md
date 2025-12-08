@@ -159,6 +159,12 @@ To process all available data (remove the sample limits):
 python main.py --mode pipeline --wikipedia-samples 999999 --aida-samples 999999
 ```
 
+### File Mode (Process a Single File)
+```bash
+# Process the text stored in example.txt
+python main.py --mode file --filename example.txt
+```
+
 ## Output Format
 
 ### NER Dataset (`ner_dataset.json`)
