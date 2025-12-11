@@ -1,6 +1,6 @@
 # Contextual Augmentation for Entity Linking without external dataset
 
-[![Lint](https://github.com/marcinleszczynski/swsn-contextual-augumentation-llm/actions/workflows/lint.yml/badge.svg)](https://github.com/marcinleszczynski/swsn-contextual-augumentation-llm/actions/workflows/lint.yml)
+[![CI](https://github.com/marcinleszczynski/swsn-contextual-augumentation-llm/actions/workflows/ci.yml/badge.svg)](https://github.com/marcinleszczynski/swsn-contextual-augumentation-llm/actions/workflows/ci.yml)
 ![Python](https://img.shields.io/badge/python-3.10+-blue.svg)
 
 This project implements a contextual augmentation pipeline for entity linking using Large Language Models (LLMs) via `pydantic-ai`.
@@ -32,11 +32,25 @@ This project implements a contextual augmentation pipeline for entity linking us
     - Windows: `.\.venv\Scripts\activate`
     - Unix/MacOS: `source .venv/bin/activate`
 4.  Install dependencies:
-    ```bash
-    pip install -r requirements.txt
-    ```
-
-## Configuration
+35.     ```bash
+36.     pip install -r requirements.txt
+37.     # OR install in editable mode (recommended for development)
+38.     pip install -e .
+39.     ```
+40. 
+41. ## Configuration
+42. 
+43. 1.  Create `.env` and set your `GEMINI_API_KEY`.
+44. 2.  (Optional) Set `GEMINI_MODEL` in `.env` to use a specific model (default: `gemini-2.5-flash`).
+45. 
+46. ## Testing
+47. 
+48. Run the tests using `pytest`:
+49. 
+50. ```bash
+51. pip install pytest
+52. pytest
+53. ```
 
 1.  Create `.env` and set your `GEMINI_API_KEY`.
 2.  (Optional) Set `GEMINI_MODEL` in `.env` to use a specific model (default: `gemini-2.5-flash`).

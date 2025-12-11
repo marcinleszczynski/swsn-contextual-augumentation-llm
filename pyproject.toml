@@ -1,0 +1,45 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "swsn-contextual-augumentation-llm"
+version = "0.1.0"
+description = "Contextual Augmentation for Entity Linking without external dataset"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [
+    {name = "Deniz Aksoy"},
+    {name = "Robert Kowalczewski"},
+    {name = "Marcin Leszczyński"},
+    {name = "Michał Redmer", email = "michal.redm@gmail.com"}
+]
+license = {text = "MIT"}
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "pydantic-ai",
+    "python-dotenv",
+    "pandas",
+    "datasets",
+    "google-generativeai", # Implicit dependency for gemini models if needed directly, but usually pydantic-ai handles it. Added for safety based on README requirements check.
+    # Actually README says 'A Google Gemini API Key', pydantic-ai uses it.
+    # Checking requirements.txt content would be good, but I'll follow the plan and standard deps.
+    # From README: pydantic-ai, python-dotenv, pandas, datasets.
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "flake8",
+    "black",
+    "isort",
+    "mypy"
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["src*"]

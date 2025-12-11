@@ -1,5 +1,5 @@
 """
-Main entry point for the Contextual Augmentation Agent.
+Main entry point for the ContextualAugmentation Agent.
 
 This script demonstrates the usage of the ContextualAugmentation agent
 to extract, expand, and describe entities from a sample text.
@@ -10,58 +10,15 @@ and generate NER and Entity Resolution datasets.
 
 import os
 from dotenv import load_dotenv
-import pandas as pd
-from datasets import load_dataset
-from itertools import islice
 
-from src.agent.contextual_augmentation import ContextualAugmentation
-from src.pipeline.pipeline import DatasetPipeline
-
-
-def load_wikipedia_dataset(num_samples: int = 1000) -> pd.DataFrame:
-    """Load Wikipedia dataset."""
-    print(f"Loading Wikipedia dataset ({num_samples} samples)...")
-
-    if num_samples == 0:
-        return pd.DataFrame([])
-
-    ds_stream = load_dataset(
-        "wikimedia/wikipedia", "20231101.en", split="train", streaming=True
-    )
-    df = pd.DataFrame(list(islice(ds_stream, num_samples)))
-    df = df[["text"]].copy()
-    df["text"] = df["text"].fillna("")
-    return df
-
-
-def load_aida_dataset(num_samples: int = 1000) -> pd.DataFrame:
-    """Load AIDA dataset."""
-    print(f"Loading AIDA dataset ({num_samples} samples)...")
-
-    if num_samples == 0:
-        return pd.DataFrame([])
-
-    ds_stream = load_dataset(
-        "json",
-        data_files="dataset/aida_dev.json",
-        split="train",
-        streaming=True
-    )
-
-    seen = set()
-    unique_texts = []
-    for example in ds_stream:
-        text = example.get("text", "")
-        if text and (text not in seen):
-            seen.add(text)
-            unique_texts.append(example)
-        if len(unique_texts) >= num_samples:
-            break
-
-    df = pd.DataFrame(unique_texts)
-    df = df[["text"]].copy()
-    df["text"] = df["text"].fillna("")
-    return df
+from src.agent import ContextualAugmentation
+from src.pipeline import DatasetPipeline
+from src.data.loaders import (
+    load_wikipedia_dataset,
+    load_aida_dataset,
+    load_text_from_file
+)
+from src.services.dbpedia import DBpediaClient
 
 
 def demo_single_example():
@@ -127,10 +84,11 @@ def demo_single_example():
     # Step 4: Link Entitites to DBpedia
     print("--- Step 4: Linking Entitites to DBpedia ---")
     try:
-        pipeline = DatasetPipeline(augmentor)
+        # We can use the service directly here for the demo
+        dbpedia_client = DBpediaClient()
         for item in descriptions:
             print(f"Name: {item.name}")
-            print(f"Link: {pipeline._find_dbpedia_link(item.name)}\n")
+            print(f"Link: {dbpedia_client.find_link(item.name)}\n")
     except Exception as e:
         print(f"Error in description: {e}")
         return
@@ -232,13 +190,8 @@ def process_file(
     # Initialize pipeline
     pipeline = DatasetPipeline(augmentor, output_dir=output_dir)
 
-    # Load the file
-    with open(file, "r", encoding="utf-8") as f:
-        text = f.read()
-
-    file_df = pd.DataFrame([{"text": text}])
-
     # Process file
+    file_df = load_text_from_file(file)
     pipeline.process_dataframe(file_df, dataset_name='file')
 
     # Save datasets
