@@ -32,28 +32,26 @@ This project implements a contextual augmentation pipeline for entity linking us
     - Windows: `.\.venv\Scripts\activate`
     - Unix/MacOS: `source .venv/bin/activate`
 4.  Install dependencies:
-35.     ```bash
-36.     pip install -r requirements.txt
-37.     # OR install in editable mode (recommended for development)
-38.     pip install -e .
-39.     ```
-40. 
-41. ## Configuration
-42. 
-43. 1.  Create `.env` and set your `GEMINI_API_KEY`.
-44. 2.  (Optional) Set `GEMINI_MODEL` in `.env` to use a specific model (default: `gemini-2.5-flash`).
-45. 
-46. ## Testing
-47. 
-48. Run the tests using `pytest`:
-49. 
-50. ```bash
-51. pip install pytest
-52. pytest
-53. ```
+    ```bash
+    pip install -r requirements.txt
+    # OR install in editable mode (recommended for development)
+    pip install -e .
+    ```
+
+## Configuration
 
 1.  Create `.env` and set your `GEMINI_API_KEY`.
 2.  (Optional) Set `GEMINI_MODEL` in `.env` to use a specific model (default: `gemini-2.5-flash`).
+
+## Testing
+
+Run the tests using `pytest`:
+
+```bash
+pip install pytest
+pytest
+```
+
 
 ## Usage
 
