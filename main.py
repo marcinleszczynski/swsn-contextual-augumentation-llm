@@ -200,6 +200,7 @@ def run_pipeline(
     print(f"Total Entity Mentions: {stats['total_entities']}")
     print(f"Unique Entities in KB: {stats['unique_entities']}")
 
+
 def process_file(
         file: str,
         output_dir: str = "datasets"
@@ -216,7 +217,7 @@ def process_file(
     if not api_key:
         print("Please set GEMINI_API_KEY environment variable.")
         return
-    
+
     # Initialize agent
     model_name = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
     try:
@@ -252,6 +253,7 @@ def process_file(
     print(f"ER Documents: {stats['er_documents']}")
     print(f"Total Entity Mentions: {stats['total_entities']}")
     print(f"Unique Entities in KB: {stats['unique_entities']}")
+
 
 def main():
     """

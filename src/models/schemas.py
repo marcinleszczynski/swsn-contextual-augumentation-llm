@@ -11,10 +11,12 @@ from typing import List
 
 class DetectedEntity(BaseModel):
     """An entity detected with reasoning and categorization."""
-    
-    # PLACING REASONING FIRST forces the model to think before it labels.
+
     reasoning: str = Field(
-        description="A brief thought process explaining why this span is an entity and what category it belongs to."
+        description=(
+            "A brief thought process explaining why this span is an entity "
+            "and what category it belongs to."
+        )
     )
     name: str = Field(
         description="The exact text span of the entity from the document."
@@ -26,7 +28,7 @@ class DetectedEntity(BaseModel):
 
 class DetectedEntityList(BaseModel):
     """List of detected entities with metadata."""
-    
+
     entities: List[DetectedEntity] = Field(
         description="List of detailed entity extractions"
     )
@@ -53,12 +55,15 @@ class ExpandedEntity(BaseModel):
 
 class InternalExpandedEntity(BaseModel):
     """
-    Internal model used only for LLM generation. 
+    Internal model used only for LLM generation.
     Includes 'reasoning' to improve accuracy via Chain-of-Thought.
     """
 
     reasoning: str = Field(
-        description="Brief analysis: 1. Identify domain. 2. Disambiguate based on context. 3. Select full canonical name."
+        description=(
+            "Brief analysis: 1. Identify domain. 2. Disambiguate based on "
+            "context. 3. Select full canonical name."
+        )
     )
     original: str = Field(
         description="The original entity name extracted from text"
