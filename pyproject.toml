@@ -26,9 +26,6 @@ dependencies = [
     "pandas",
     "datasets",
     "google-generativeai", # Implicit dependency for gemini models if needed directly, but usually pydantic-ai handles it. Added for safety based on README requirements check.
-    # Actually README says 'A Google Gemini API Key', pydantic-ai uses it.
-    # Checking requirements.txt content would be good, but I'll follow the plan and standard deps.
-    # From README: pydantic-ai, python-dotenv, pandas, datasets.
 ]
 
 [project.optional-dependencies]
