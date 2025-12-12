@@ -7,7 +7,6 @@ entities with DBpedia data using an AI model.
 
 import json
 import os
-import re
 import time
 from typing import List, Dict, Any, Optional
 import requests
@@ -27,15 +26,18 @@ from src.models.validation_schemas import (
 
 class BatchValidationDecision(BaseModel):
     """AI model's decision on multiple entity validations."""
-    
+
     validations: List[ValidationDecision] = Field(
-        description="List of validation decisions, one for each entity in the same order as provided"
+        description=(
+            "List of validation decisions, one for "
+            "each entity in the same order as provided"
+        )
     )
 
 
 class EntityValidator:
     """Validates entity linking results against DBpedia."""
-    
+
     def __init__(
         self,
         model_name: str = 'gemini-2.5-flash',
@@ -47,7 +49,7 @@ class EntityValidator:
     ):
         """
         Initialize the validator.
-        
+
         Args:
             model_name: Gemini model name
             api_key: Google API key
@@ -59,30 +61,30 @@ class EntityValidator:
         api_key = api_key or os.getenv("GEMINI_API_KEY")
         if not api_key:
             raise ValueError("GEMINI_API_KEY is not set")
-        
+
         os.environ["GEMINI_API_KEY"] = api_key
         self.model = GeminiModel(model_name)
         self.model_settings = ModelSettings(temperature=0.0)
-        
+
         self.er_dataset_path = er_dataset_path
         self.output_path = output_path
         self.batch_size = batch_size
         self.rate_limit_delay = rate_limit_delay
-        
+
         # SPARQL endpoint for DBpedia
         self.sparql = SPARQLWrapper("http://dbpedia.org/sparql")
         self.sparql.setReturnFormat(JSON)
-        
+
     def get_context(self, text: str, start: int, end: int, window: int = 10) -> str:
         """
         Extract context around an entity mention.
-        
+
         Args:
             text: Full text
             start: Entity start position
             end: Entity end position
             window: Number of words to include on each side
-            
+
         Returns:
             Context string with entity highlighted
         """
@@ -90,11 +92,11 @@ class EntityValidator:
         words_before = text[:start].split()
         entity = text[start:end]
         words_after = text[end:].split()
-        
+
         # Get window of words
         context_before = " ".join(words_before[-window:]) if words_before else ""
         context_after = " ".join(words_after[:window]) if words_after else ""
-        
+
         # Build context with entity highlighted
         context_parts = []
         if context_before:
@@ -102,34 +104,34 @@ class EntityValidator:
         context_parts.append(f"**{entity}**")
         if context_after:
             context_parts.append(context_after)
-            
+
         return " ".join(context_parts)
-    
+
     def query_dbpedia(self, dbpedia_url: str) -> Dict[str, str]:
         """
         Query DBpedia for entity information using multiple strategies.
-        
+
         Args:
             dbpedia_url: DBpedia resource URL
-            
+
         Returns:
             Dictionary with name, type, and description
         """
         # Extract resource name from URL
         resource = dbpedia_url.replace("http://dbpedia.org/resource/", "")
-        
+
         # Strategy 1: Try SPARQL with better query
         query = f"""
         PREFIX dbo: <http://dbpedia.org/ontology/>
         PREFIX dbr: <http://dbpedia.org/resource/>
         PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
         PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-        
+
         SELECT ?label ?type ?abstract
         WHERE {{
             <{dbpedia_url}> rdfs:label ?label .
             FILTER (lang(?label) = 'en')
-            
+
             OPTIONAL {{
                 <{dbpedia_url}> rdf:type ?type .
                 FILTER (
@@ -137,7 +139,7 @@ class EntityValidator:
                     STRSTARTS(STR(?type), "http://schema.org/")
                 )
             }}
-            
+
             OPTIONAL {{
                 <{dbpedia_url}> dbo:abstract ?abstract .
                 FILTER (lang(?abstract) = 'en')
@@ -146,18 +148,18 @@ class EntityValidator:
         ORDER BY DESC(STRLEN(STR(?abstract)))
         LIMIT 1
         """
-        
+
         try:
             self.sparql.setQuery(query)
             self.sparql.setTimeout(10)
             results = self.sparql.query().convert()
-            
+
             if results["results"]["bindings"]:
                 result = results["results"]["bindings"][0]
-                
+
                 # Extract label (name)
                 label = result.get("label", {}).get("value", resource.replace("_", " "))
-                
+
                 # Extract type - get most specific type
                 type_uri = result.get("type", {}).get("value", "")
                 if type_uri:
@@ -170,10 +172,10 @@ class EntityValidator:
                         type_name = type_uri.split("/")[-1].split("#")[-1]
                 else:
                     type_name = "Entity"
-                
+
                 # Extract abstract (description)
                 abstract = result.get("abstract", {}).get("value", "")
-                
+
                 if abstract:
                     # Limit abstract to first 500 chars
                     if len(abstract) > 500:
@@ -181,38 +183,38 @@ class EntityValidator:
                 else:
                     # Try REST API fallback for description
                     abstract = self._fetch_description_rest(dbpedia_url)
-                
+
                 return {
                     "name": label,
                     "type": type_name,
                     "description": abstract if abstract else "No description available"
                 }
-                
+
         except Exception as e:
             print(f"SPARQL query failed for {dbpedia_url}, trying REST API: {e}")
-        
+
         # Strategy 2: Fallback to REST API
         try:
             import requests
-            
+
             # Try to get JSON data from DBpedia
             json_url = dbpedia_url.replace("/resource/", "/data/") + ".json"
             response = requests.get(json_url, timeout=10)
-            
+
             if response.status_code == 200:
                 data = response.json()
                 resource_data = data.get(dbpedia_url, {})
-                
+
                 # Get label
                 labels = resource_data.get("http://www.w3.org/2000/01/rdf-schema#label", [])
                 label = None
-                for l in labels:
-                    if l.get("lang") == "en":
-                        label = l.get("value")
+                for lab in labels:
+                    if lab.get("lang") == "en":
+                        label = lab.get("value")
                         break
                 if not label:
                     label = resource.replace("_", " ")
-                
+
                 # Get type
                 types = resource_data.get("http://www.w3.org/1999/02/22-rdf-syntax-ns#type", [])
                 type_name = "Entity"
@@ -221,7 +223,7 @@ class EntityValidator:
                     if "/ontology/" in type_uri:
                         type_name = type_uri.split("/ontology/")[-1]
                         break
-                
+
                 # Get abstract
                 abstracts = resource_data.get("http://dbpedia.org/ontology/abstract", [])
                 abstract = None
@@ -231,7 +233,7 @@ class EntityValidator:
                         if len(abstract) > 500:
                             abstract = abstract[:497] + "..."
                         break
-                
+
                 return {
                     "name": label,
                     "type": type_name,
@@ -239,16 +241,17 @@ class EntityValidator:
                 }
         except Exception as e:
             print(f"REST API also failed for {dbpedia_url}: {e}")
-        
+
         # Strategy 3: Ultimate fallback
         return {
             "name": resource.replace("_", " "),
             "type": "Entity",
             "description": f"DBpedia resource: {resource.replace('_', ' ')}"
         }
-        
+
     def _fetch_description_rest(self, dbpedia_url: str) -> str:
-        """Fetch description using DBpedia REST API (ontology:description first, fallback to abstract)."""
+        """Fetch description using DBpedia REST API
+        (ontology:description first, fallback to abstract)."""
         try:
             data_url = dbpedia_url.replace("/resource/", "/data/") + ".json"
             response = requests.get(data_url, timeout=10)
@@ -280,7 +283,6 @@ class EntityValidator:
 
         return ""
 
-    
     def validate_entity_batch(
         self,
         entities_data: List[Dict[str, Any]],
@@ -288,12 +290,12 @@ class EntityValidator:
     ) -> List[ValidationDecision]:
         """
         Use AI model to validate multiple entities at once with retry logic.
-        
+
         Args:
-            entities_data: List of dicts with canonical_name, our_description, 
+            entities_data: List of dicts with canonical_name, our_description,
                           context, and dbpedia_data for each entity
             max_retries: Maximum number of retry attempts
-            
+
         Returns:
             List of ValidationDecision objects
         """
@@ -307,7 +309,8 @@ class EntityValidator:
                 "1. Our extracted canonical name and description\n"
                 "2. The text context where the entity was mentioned\n"
                 "3. Data from the DBpedia resource (name, type, description)\n\n"
-                "Your job is to decide if each DBpedia link makes sense for the extracted entity.\n\n"
+                "Your job is to decide if each DBpedia link "
+                "makes sense for the extracted entity.\n\n"
                 "Guidelines:\n"
                 "- 'correct': The DBpedia resource clearly matches the entity (same person, place, "
                 "organization, etc.). Minor differences in description wording are OK.\n"
@@ -323,23 +326,23 @@ class EntityValidator:
                 "IMPORTANT: Return validations in the SAME ORDER as the entities provided."
             )
         )
-        
+
         # Build prompt with all entities
         prompt_parts = ["Please validate the following entities:\n"]
-        
+
         for i, entity in enumerate(entities_data, 1):
             prompt_parts.append(f"\n--- Entity {i} ---")
             prompt_parts.append(f"Context from text: {entity['context']}")
-            prompt_parts.append(f"\nOur Data:")
+            prompt_parts.append("\nOur Data:")
             prompt_parts.append(f"- Canonical Name: {entity['canonical_name']}")
             prompt_parts.append(f"- Description: {entity['our_description']}")
-            prompt_parts.append(f"\nDBpedia Data:")
+            prompt_parts.append("\nDBpedia Data:")
             prompt_parts.append(f"- Name: {entity['dbpedia_data']['name']}")
             prompt_parts.append(f"- Type: {entity['dbpedia_data']['type']}")
             prompt_parts.append(f"- Description: {entity['dbpedia_data']['description']}\n")
-        
+
         prompt = "\n".join(prompt_parts)
-        
+
         # Retry logic with exponential backoff
         for attempt in range(max_retries):
             try:
@@ -347,7 +350,7 @@ class EntityValidator:
                 return result.output.validations
             except Exception as e:
                 error_str = str(e)
-                
+
                 # Check if it's a rate limit error
                 if "429" in error_str or "RESOURCE_EXHAUSTED" in error_str:
                     if attempt < max_retries - 1:
@@ -358,32 +361,33 @@ class EntityValidator:
                             retry_delay = float(match.group(1)) + 1  # Add 1 second buffer
                         else:
                             retry_delay = (2 ** attempt) * 15  # Exponential backoff: 15s, 30s, 60s
-                        
-                        print(f"\nRate limit hit, waiting {retry_delay:.1f}s before retry {attempt + 1}/{max_retries}...")
+
+                        print((f"\nRate limit hit, waiting {retry_delay:.1f}s"""
+                              "before retry {attempt + 1}/{max_retries}..."))
                         time.sleep(retry_delay)
                         continue
                     else:
-                        print(f"\nMax retries reached due to rate limiting")
+                        print("\nMax retries reached due to rate limiting")
                         raise
                 else:
                     # Non-rate-limit error, raise immediately
                     raise
-        
+
         # Should not reach here
         raise Exception("Failed to validate batch after all retries")
-    
+
     def validate_dataset(self) -> Dict[str, Any]:
         """
         Validate all entities in the ER dataset.
-        
+
         Returns:
             Dictionary containing validation results and summary
         """
         print(f"Loading ER dataset from {self.er_dataset_path}...")
-        
+
         with open(self.er_dataset_path, 'r', encoding='utf-8') as f:
             er_data = json.load(f)
-        
+
         results = []
         stats = {
             "correct": 0,
@@ -391,17 +395,17 @@ class EntityValidator:
             "not_sure": 0,
             "unlinked": 0
         }
-        
+
         # Collect all entities that need validation
         entities_to_validate = []
-        
+
         print(f"Processing {len(er_data)} documents...\n")
-        
+
         for doc in er_data:
             doc_id = doc["id"]
             text = doc["text"]
             mentions = doc["mentions"]
-            
+
             for mention_data in mentions:
                 mention = mention_data["mention"]
                 canonical_name = mention_data["canonical_name"]
@@ -409,10 +413,10 @@ class EntityValidator:
                 dbpedia_link = mention_data["dbpedia_link"]
                 start = mention_data["start"]
                 end = mention_data["end"]
-                
+
                 # Get context
                 context = self.get_context(text, start, end, window=10)
-                
+
                 # Handle unlinked entities immediately
                 if dbpedia_link is None:
                     results.append(EntityValidationResult(
@@ -430,10 +434,10 @@ class EntityValidator:
                     ).model_dump())
                     stats["unlinked"] += 1
                     continue
-                
+
                 # Query DBpedia
                 dbpedia_data = self.query_dbpedia(dbpedia_link)
-                
+
                 # Add to validation queue
                 entities_to_validate.append({
                     'doc_id': doc_id,
@@ -444,25 +448,29 @@ class EntityValidator:
                     'dbpedia_link': dbpedia_link,
                     'dbpedia_data': dbpedia_data
                 })
-        
+
         # Process entities in batches
-        print(f"Validating {len(entities_to_validate)} linked entities in batches of {self.batch_size}...\n")
-        
+        print((f"Validating {len(entities_to_validate)}"
+               "linked entities in batches of {self.batch_size}...\n"))
+
         num_batches = (len(entities_to_validate) + self.batch_size - 1) // self.batch_size
-        
-        for i in tqdm(range(0, len(entities_to_validate), self.batch_size), 
-                     total=num_batches, desc="Validating batches"):
+
+        for i in tqdm(
+            range(0, len(entities_to_validate), self.batch_size),
+            total=num_batches,
+            desc="Validating batches"
+        ):
             batch = entities_to_validate[i:i + self.batch_size]
-            
+
             try:
                 # Validate batch
                 validations = self.validate_entity_batch(batch)
-                
+
                 # Match validations to entities
                 for entity, validation in zip(batch, validations):
                     decision = validation.decision
                     reasoning = validation.reasoning
-                    
+
                     # Store result
                     results.append(EntityValidationResult(
                         doc_id=entity['doc_id'],
@@ -477,13 +485,13 @@ class EntityValidator:
                         decision=decision,
                         reasoning=reasoning
                     ).model_dump())
-                    
+
                     stats[decision] += 1
-                
+
                 # Rate limiting: wait between batches (except for last batch)
                 if i + self.batch_size < len(entities_to_validate):
                     time.sleep(self.rate_limit_delay)
-                    
+
             except Exception as e:
                 print(f"\nError validating batch: {e}")
                 # Mark all entities in failed batch as "not_sure"
@@ -502,15 +510,15 @@ class EntityValidator:
                         reasoning=f"Validation failed: {str(e)}"
                     ).model_dump())
                     stats["not_sure"] += 1
-        
+
         # Calculate summary statistics
         total_entities = len(results)
         linked_entities = total_entities - stats["unlinked"]
         validation_rate = (linked_entities / total_entities * 100) if total_entities > 0 else 0
-        
+
         validated_entities = stats["correct"] + stats["incorrect"] + stats["not_sure"]
         accuracy = (stats["correct"] / validated_entities * 100) if validated_entities > 0 else 0
-        
+
         summary = ValidationSummary(
             total_entities=total_entities,
             correct=stats["correct"],
@@ -520,12 +528,12 @@ class EntityValidator:
             validation_rate=round(validation_rate, 2),
             accuracy=round(accuracy, 2)
         ).model_dump()
-        
+
         return {
             "summary": summary,
             "results": results
         }
-    
+
     def run_validation(self) -> None:
         """
         Run full validation and save results.
@@ -533,22 +541,22 @@ class EntityValidator:
         print("="*80)
         print("ENTITY LINKING VALIDATION")
         print("="*80 + "\n")
-        
+
         # Run validation
         validation_data = self.validate_dataset()
-        
+
         # Save to JSON
         print(f"\nSaving validation results to {self.output_path}...")
         os.makedirs(os.path.dirname(self.output_path), exist_ok=True)
-        
+
         with open(self.output_path, 'w', encoding='utf-8') as f:
             json.dump(validation_data, f, indent=2, ensure_ascii=False)
-        
+
         # Print summary
         print("\n" + "="*80)
         print("VALIDATION SUMMARY")
         print("="*80)
-        
+
         summary = validation_data["summary"]
         print(f"Total Entities: {summary['total_entities']}")
         print(f"  ✓ Correct: {summary['correct']}")

@@ -215,7 +215,7 @@ def run_validation(
 ):
     """
     Run validation on entity linking results.
-    
+
     Args:
         er_dataset_path: Path to the ER dataset JSON
         output_path: Path to save validation results
@@ -227,18 +227,18 @@ def run_validation(
         return
 
     model_name = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
-    
+
     try:
-        
+
         validator = EntityValidator(
             model_name=model_name,
             api_key=api_key,
             er_dataset_path=er_dataset_path,
             output_path=output_path
         )
-        
+
         validator.run_validation()
-        
+
     except Exception as e:
         print(f"Error during validation: {e}")
         import traceback
@@ -258,7 +258,10 @@ def main():
         '--mode',
         choices=['demo', 'pipeline', 'file', 'validate'],
         default='demo',
-        help='Run mode: demo (single example), pipeline (full processing), file (1 txt file), or validate (validate entity linking)'
+        help=(
+            'Run mode: demo (single example), pipeline (full processing), '
+            'file (1 txt file), or validate (validate entity linking)'
+        )
     )
     parser.add_argument(
         '--filename',

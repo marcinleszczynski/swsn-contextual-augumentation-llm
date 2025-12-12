@@ -5,12 +5,12 @@ Defines Pydantic models for validation results.
 """
 
 from pydantic import BaseModel, Field
-from typing import List, Literal
+from typing import Literal
 
 
 class ValidationDecision(BaseModel):
     """AI model's decision on entity validation."""
-    
+
     reasoning: str = Field(
         description="Brief explanation of why the entity link is correct, incorrect, or uncertain"
     )
@@ -21,7 +21,7 @@ class ValidationDecision(BaseModel):
 
 class EntityValidationResult(BaseModel):
     """Result of validating a single entity."""
-    
+
     doc_id: str
     mention: str
     canonical_name: str
@@ -33,11 +33,11 @@ class EntityValidationResult(BaseModel):
     dbpedia_description: str
     decision: str  # "correct", "incorrect", "not_sure", "unlinked"
     reasoning: str
-    
+
 
 class ValidationSummary(BaseModel):
     """Summary statistics of validation results."""
-    
+
     total_entities: int
     correct: int
     incorrect: int
