@@ -19,6 +19,7 @@ from src.data.loaders import (
     load_text_from_file
 )
 from src.services.dbpedia import DBpediaClient
+from src.validation.validator import EntityValidator
 
 
 def demo_single_example():
@@ -208,6 +209,42 @@ def process_file(
     print(f"Unique Entities in KB: {stats['unique_entities']}")
 
 
+def run_validation(
+    er_dataset_path: str = "datasets/er_dataset.json",
+    output_path: str = "datasets/validation_results.json"
+):
+    """
+    Run validation on entity linking results.
+    
+    Args:
+        er_dataset_path: Path to the ER dataset JSON
+        output_path: Path to save validation results
+    """
+    load_dotenv()
+    api_key = os.getenv("GEMINI_API_KEY")
+    if not api_key:
+        print("Please set GEMINI_API_KEY environment variable.")
+        return
+
+    model_name = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+    
+    try:
+        
+        validator = EntityValidator(
+            model_name=model_name,
+            api_key=api_key,
+            er_dataset_path=er_dataset_path,
+            output_path=output_path
+        )
+        
+        validator.run_validation()
+        
+    except Exception as e:
+        print(f"Error during validation: {e}")
+        import traceback
+        traceback.print_exc()
+
+
 def main():
     """
     Main entry point.
@@ -219,9 +256,9 @@ def main():
     )
     parser.add_argument(
         '--mode',
-        choices=['demo', 'pipeline', 'file'],
+        choices=['demo', 'pipeline', 'file', 'validate'],
         default='demo',
-        help='Run mode: demo (single example), pipeline (full processing) or file (1 txt file)'
+        help='Run mode: demo (single example), pipeline (full processing), file (1 txt file), or validate (validate entity linking)'
     )
     parser.add_argument(
         '--filename',
@@ -247,6 +284,18 @@ def main():
         default='datasets',
         help='Output directory for datasets (default: datasets)'
     )
+    parser.add_argument(
+        '--er-dataset',
+        type=str,
+        default='datasets/er_dataset.json',
+        help='Path to ER dataset for validation (default: datasets/er_dataset.json)'
+    )
+    parser.add_argument(
+        '--validation-output',
+        type=str,
+        default='datasets/validation_results.json',
+        help='Output path for validation results (default: datasets/validation_results.json)'
+    )
 
     args = parser.parse_args()
 
@@ -256,6 +305,11 @@ def main():
         if not args.filename:
             parser.error("You must provide a filename when using --mode file")
         process_file(args.filename)
+    elif args.mode == 'validate':
+        run_validation(
+            er_dataset_path=args.er_dataset,
+            output_path=args.validation_output
+        )
     else:
         run_pipeline(
             wikipedia_samples=args.wikipedia_samples,
