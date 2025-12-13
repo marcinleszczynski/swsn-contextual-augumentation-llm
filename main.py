@@ -16,7 +16,8 @@ from src.pipeline import DatasetPipeline
 from src.data.loaders import (
     load_wikipedia_dataset,
     load_aida_dataset,
-    load_text_from_file
+    load_aida_conll_parquet,
+    load_text_from_file,
 )
 from src.services.dbpedia import DBpediaClient
 from src.validation.validator import EntityValidator
@@ -26,9 +27,9 @@ def demo_single_example():
     """
     Run a single example to demonstrate the agent functionality.
     """
-    print("="*80)
+    print("=" * 80)
     print("DEMO: Single Example Processing")
-    print("="*80)
+    print("=" * 80)
 
     load_dotenv()
     api_key = os.getenv("GEMINI_API_KEY")
@@ -38,9 +39,7 @@ def demo_single_example():
 
     model_name = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
     try:
-        augmentor = ContextualAugmentation(
-            model_name=model_name, api_key=api_key
-        )
+        augmentor = ContextualAugmentation(model_name=model_name, api_key=api_key)
         print(f"Initialized with model: {model_name}")
     except Exception as e:
         print(f"Error initializing agent: {e}")
@@ -63,9 +62,7 @@ def demo_single_example():
     try:
         expanded_entities = augmentor.expand_entities(text, entities)
         for entity in expanded_entities:
-            print(
-                f"Original: {entity.original} -> Expanded: {entity.expanded}"
-            )
+            print(f"Original: {entity.original} -> Expanded: {entity.expanded}")
         print()
     except Exception as e:
         print(f"Error in expansion: {e}")
@@ -98,7 +95,8 @@ def demo_single_example():
 def run_pipeline(
     wikipedia_samples: int = 100,
     aida_samples: int = 100,
-    output_dir: str = "datasets"
+    aida_conll_samples: int = 0,
+    output_dir: str = "datasets",
 ):
     """
     Run the full pipeline on datasets.
@@ -106,11 +104,12 @@ def run_pipeline(
     Args:
         wikipedia_samples: Number of Wikipedia samples to process
         aida_samples: Number of AIDA samples to process
+        aida_conll_samples: Number of AIDA CoNLL parquet samples to process
         output_dir: Directory to save output datasets
     """
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("RUNNING FULL PIPELINE")
-    print("="*80 + "\n")
+    print("=" * 80 + "\n")
 
     load_dotenv()
     api_key = os.getenv("GEMINI_API_KEY")
@@ -121,9 +120,7 @@ def run_pipeline(
     # Initialize agent
     model_name = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
     try:
-        augmentor = ContextualAugmentation(
-            model_name=model_name, api_key=api_key
-        )
+        augmentor = ContextualAugmentation(model_name=model_name, api_key=api_key)
         print(f"Initialized with model: {model_name}\n")
     except Exception as e:
         print(f"Error initializing agent: {e}")
@@ -146,13 +143,21 @@ def run_pipeline(
     except Exception as e:
         print(f"Error processing AIDA dataset: {e}")
 
+    # Process AIDA CoNLL parquet dataset
+    if aida_conll_samples > 0:
+        try:
+            aida_conll_df = load_aida_conll_parquet(aida_conll_samples)
+            pipeline.process_dataframe(aida_conll_df, dataset_name="aida_conll")
+        except Exception as e:
+            print(f"Error processing AIDA CoNLL parquet dataset: {e}")
+
     # Save datasets
     pipeline.save_datasets()
 
     # Print statistics
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("DATASET STATISTICS")
-    print("="*80)
+    print("=" * 80)
     stats = pipeline.get_statistics()
     print(f"NER Documents: {stats['ner_documents']}")
     print(f"ER Documents: {stats['er_documents']}")
@@ -160,10 +165,7 @@ def run_pipeline(
     print(f"Unique Entities in KB: {stats['unique_entities']}")
 
 
-def process_file(
-        file: str,
-        output_dir: str = "datasets"
-):
+def process_file(file: str, output_dir: str = "datasets"):
     """
     Run the full pipeline on text extracted from 1 file.
 
@@ -180,9 +182,7 @@ def process_file(
     # Initialize agent
     model_name = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
     try:
-        augmentor = ContextualAugmentation(
-            model_name=model_name, api_key=api_key
-        )
+        augmentor = ContextualAugmentation(model_name=model_name, api_key=api_key)
         print(f"Initialized with model: {model_name}\n")
     except Exception as e:
         print(f"Error initializing agent: {e}")
@@ -193,15 +193,15 @@ def process_file(
 
     # Process file
     file_df = load_text_from_file(file)
-    pipeline.process_dataframe(file_df, dataset_name='file')
+    pipeline.process_dataframe(file_df, dataset_name="file")
 
     # Save datasets
     pipeline.save_datasets()
 
     # Print statistics
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("FILE STATISTICS")
-    print("="*80)
+    print("=" * 80)
     stats = pipeline.get_statistics()
     print(f"NER Documents: {stats['ner_documents']}")
     print(f"ER Documents: {stats['er_documents']}")
@@ -211,7 +211,7 @@ def process_file(
 
 def run_validation(
     er_dataset_path: str = "datasets/er_dataset.json",
-    output_path: str = "datasets/validation_results.json"
+    output_path: str = "datasets/validation_results.json",
 ):
     """
     Run validation on entity linking results.
@@ -234,7 +234,7 @@ def run_validation(
             model_name=model_name,
             api_key=api_key,
             er_dataset_path=er_dataset_path,
-            output_path=output_path
+            output_path=output_path,
         )
 
         validator.run_validation()
@@ -242,6 +242,7 @@ def run_validation(
     except Exception as e:
         print(f"Error during validation: {e}")
         import traceback
+
         traceback.print_exc()
 
 
@@ -255,69 +256,72 @@ def main():
         description="Process datasets to create NER and ER datasets"
     )
     parser.add_argument(
-        '--mode',
-        choices=['demo', 'pipeline', 'file', 'validate'],
-        default='demo',
+        "--mode",
+        choices=["demo", "pipeline", "file", "validate"],
+        default="demo",
         help=(
-            'Run mode: demo (single example), pipeline (full processing), '
-            'file (1 txt file), or validate (validate entity linking)'
-        )
+            "Run mode: demo (single example), pipeline (full processing), "
+            "file (1 txt file), or validate (validate entity linking)"
+        ),
     )
     parser.add_argument(
-        '--filename',
-        nargs='?',
-        default=None,
-        help='Input file for --mode file'
+        "--filename", nargs="?", default=None, help="Input file for --mode file"
     )
     parser.add_argument(
-        '--wikipedia-samples',
+        "--wikipedia-samples",
         type=int,
         default=100,
-        help='Number of Wikipedia samples to process (default: 100)'
+        help="Number of Wikipedia samples to process (default: 100)",
     )
     parser.add_argument(
-        '--aida-samples',
+        "--aida-samples",
         type=int,
         default=100,
-        help='Number of AIDA samples to process (default: 100)'
+        help="Number of AIDA samples to process (default: 100)",
     )
     parser.add_argument(
-        '--output-dir',
-        type=str,
-        default='datasets',
-        help='Output directory for datasets (default: datasets)'
+        "--aida-conll-samples",
+        type=int,
+        default=0,
+        help="Number of AIDA CoNLL parquet samples to process (default: 0)",
     )
     parser.add_argument(
-        '--er-dataset',
+        "--output-dir",
         type=str,
-        default='datasets/er_dataset.json',
-        help='Path to ER dataset for validation (default: datasets/er_dataset.json)'
+        default="datasets",
+        help="Output directory for datasets (default: datasets)",
     )
     parser.add_argument(
-        '--validation-output',
+        "--er-dataset",
         type=str,
-        default='datasets/validation_results.json',
-        help='Output path for validation results (default: datasets/validation_results.json)'
+        default="datasets/er_dataset.json",
+        help="Path to ER dataset for validation (default: datasets/er_dataset.json)",
+    )
+    parser.add_argument(
+        "--validation-output",
+        type=str,
+        default="datasets/validation_results.json",
+        help="Output path for validation results (default: datasets/validation_results.json)",
     )
 
     args = parser.parse_args()
 
-    if args.mode == 'demo':
+    if args.mode == "demo":
         demo_single_example()
-    elif args.mode == 'file':
+    elif args.mode == "file":
         if not args.filename:
             parser.error("You must provide a filename when using --mode file")
         process_file(args.filename)
-    elif args.mode == 'validate':
+    elif args.mode == "validate":
         run_validation(
-            er_dataset_path=args.er_dataset,
-            output_path=args.validation_output
+            er_dataset_path=args.er_dataset, output_path=args.validation_output
         )
     else:
         run_pipeline(
             wikipedia_samples=args.wikipedia_samples,
             aida_samples=args.aida_samples,
-            output_dir=args.output_dir
+            aida_conll_samples=args.aida_conll_samples,
+            output_dir=args.output_dir,
         )
 
 

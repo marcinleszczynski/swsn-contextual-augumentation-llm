@@ -29,7 +29,7 @@ def load_wikipedia_dataset(num_samples: int = 1000) -> pd.DataFrame:
         "wikimedia/wikipedia", "20231101.en", split="train", streaming=True
     )
     df = pd.DataFrame(list(islice(ds_stream, num_samples)))
-    if 'text' in df.columns:
+    if "text" in df.columns:
         df = df[["text"]].copy()
         df["text"] = df["text"].fillna("")
         return df
@@ -53,10 +53,7 @@ def load_aida_dataset(num_samples: int = 1000) -> pd.DataFrame:
 
     try:
         ds_stream = load_dataset(
-            "json",
-            data_files="dataset/aida_dev.json",
-            split="train",
-            streaming=True
+            "json", data_files="dataset/aida_dev.json", split="train", streaming=True
         )
     except Exception as e:
         print(f"Warning: Could not load AIDA dataset: {e}")
@@ -77,12 +74,49 @@ def load_aida_dataset(num_samples: int = 1000) -> pd.DataFrame:
         print(f"Error reading AIDA stream: {e}")
 
     df = pd.DataFrame(unique_texts)
-    if not df.empty and 'text' in df.columns:
+    if not df.empty and "text" in df.columns:
         df = df[["text"]].copy()
         df["text"] = df["text"].fillna("")
         return df
 
     return pd.DataFrame(columns=["text"])
+
+
+def load_aida_conll_parquet(num_samples: int = 1000) -> pd.DataFrame:
+    """
+    Load AIDA CoNLL parquet dataset from Hugging Face.
+
+    Args:
+        num_samples: Number of samples to load.
+
+    Returns:
+        DataFrame with a 'text' column.
+    """
+    print(f"Loading AIDA CoNLL parquet dataset ({num_samples} samples)...")
+
+    if num_samples == 0:
+        return pd.DataFrame([])
+
+    try:
+        ds_stream = load_dataset(
+            "cyanic-selkie/aida-conll-yago-wikidata",
+            split="test",
+            streaming=True,
+        )
+        rows = list(islice(ds_stream, num_samples))
+        df = pd.DataFrame(rows)
+
+        # Limit to num_samples if specified
+        if num_samples > 0 and len(df) > num_samples:
+            df = df.head(num_samples)
+
+        df = df[["text"]].copy()
+        df["text"] = df["text"].fillna("")
+        return df
+
+    except Exception as e:
+        print(f"Error loading AIDA CoNLL parquet dataset: {e}")
+        return pd.DataFrame(columns=["text"])
 
 
 def load_text_from_file(filepath: str) -> pd.DataFrame:
