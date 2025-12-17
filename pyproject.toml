@@ -26,6 +26,9 @@ dependencies = [
     "pandas",
     "datasets",
     "google-generativeai", # Implicit dependency for gemini models if needed directly, but usually pydantic-ai handles it. Added for safety based on README requirements check.
+    "sentence-transformers",
+    "requests",
+    "tqdm",
 ]
 
 [project.optional-dependencies]
