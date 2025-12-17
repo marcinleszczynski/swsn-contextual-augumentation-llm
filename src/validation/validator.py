@@ -538,9 +538,9 @@ class EntityValidator:
         """
         Run full validation and save results.
         """
-        print("="*80)
+        print("=" * 80)
         print("ENTITY LINKING VALIDATION")
-        print("="*80 + "\n")
+        print("=" * 80 + "\n")
 
         # Run validation
         validation_data = self.validate_dataset()
@@ -553,9 +553,9 @@ class EntityValidator:
             json.dump(validation_data, f, indent=2, ensure_ascii=False)
 
         # Print summary
-        print("\n" + "="*80)
+        print("\n" + "=" * 80)
         print("VALIDATION SUMMARY")
-        print("="*80)
+        print("=" * 80)
 
         summary = validation_data["summary"]
         print(f"Total Entities: {summary['total_entities']}")
@@ -565,4 +565,4 @@ class EntityValidator:
         print(f"  - Unlinked: {summary['unlinked']}")
         print(f"\nValidation Rate: {summary['validation_rate']}% (entities with DBpedia links)")
         print(f"Accuracy: {summary['accuracy']}% (correct / validated entities)")
-        print("\n" + "="*80)
+        print("\n" + "=" * 80)

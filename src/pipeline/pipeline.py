@@ -14,6 +14,7 @@ import pandas as pd
 from tqdm import tqdm
 
 from src.agent.contextual_augmentation import ContextualAugmentation
+from src.services.similarity import SemanticSelector
 from src.services.dbpedia import DBpediaClient
 
 
@@ -68,6 +69,7 @@ class DatasetPipeline:
 
         # DBpedia Client
         self.dbpedia_client = DBpediaClient()
+        self.semantic_selector = SemanticSelector()
 
         # Accumulated datasets
         self.ner_dataset: List[Dict[str, Any]] = []
@@ -180,8 +182,13 @@ class DatasetPipeline:
                 entity_id = self._get_or_create_entity_id(canonical,
                                                           description)
 
-                # Find DBpedia link
-                dbpedia_link = self.dbpedia_client.find_link(canonical)
+                # Find best DBpedia link
+                candidates = self.dbpedia_client.search_entities(canonical)
+                best_match = self.semantic_selector.select_best_candidate(
+                    description, candidates
+                )
+
+                dbpedia_link = best_match.get("uri") if best_match else None
 
                 # Add to NER dataset format
                 ner_entities.append({
@@ -209,7 +216,9 @@ class DatasetPipeline:
             )
 
         except Exception as e:
+            import traceback
             print(f"Error processing document {doc_id}: {e}")
+            print(traceback.format_exc())
             return None
 
     def process_dataframe(

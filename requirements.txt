@@ -4,3 +4,4 @@ pandas
 datasets
 requests
 SPARQLWrapper
+sentence-transformers
