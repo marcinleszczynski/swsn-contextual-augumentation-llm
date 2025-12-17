@@ -52,15 +52,6 @@ pip install pytest
 pytest
 ```
 
-
-## Usage
-
-Run the main script:
-
-```bash
-python main.py
-```
-
 ## Pipeline
 
 The pipeline processes text through three stages:
