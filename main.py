@@ -86,7 +86,7 @@ def demo_single_example():
         dbpedia_client = DBpediaClient()
         for item in descriptions:
             print(f"Name: {item.name}")
-            print(f"Link: {dbpedia_client.find_link(item.name)}\n")
+            print(f"Link: {dbpedia_client.search_entities(item.name)}\n")
     except Exception as e:
         print(f"Error in description: {e}")
         return

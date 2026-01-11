@@ -278,7 +278,7 @@ class DatasetPipeline:
                     "canonical_name": canonical_name,
                     "description": self.entity_descriptions.get(entity_id, ""),
                     # Using cached value
-                    "dbpedia_link": self.dbpedia_client.find_link(canonical_name)
+                    "dbpedia_link": self.dbpedia_client.search_entities(canonical_name)
                 }
                 for canonical_name, entity_id in self.entity_kb.items()
             ]
