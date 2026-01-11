@@ -67,6 +67,9 @@ class DatasetPipeline:
         # Store entity descriptions
         self.entity_descriptions: Dict[str, str] = {}
 
+        # Store entity links
+        self.entity_links: Dict[str, str] = {}
+
         # DBpedia Client
         self.dbpedia_client = DBpediaClient()
         self.semantic_selector = SemanticSelector()
@@ -190,6 +193,8 @@ class DatasetPipeline:
 
                 dbpedia_link = best_match.get("uri") if best_match else None
 
+                self.entity_links[entity_id] = dbpedia_link
+
                 # Add to NER dataset format
                 ner_entities.append({
                     "start": start,
@@ -277,8 +282,7 @@ class DatasetPipeline:
                     "entity_id": entity_id,
                     "canonical_name": canonical_name,
                     "description": self.entity_descriptions.get(entity_id, ""),
-                    # Using cached value
-                    "dbpedia_link": self.dbpedia_client.search_entities(canonical_name)
+                    "dbpedia_link": self.entity_links.get(entity_id, "")
                 }
                 for canonical_name, entity_id in self.entity_kb.items()
             ]
